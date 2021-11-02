@@ -1,0 +1,250 @@
+@Library(['utility-dsl@v2.3','pipeline-shared-lib@2.2.3'])_
+import fr.pe.jenkins.plugins.bundle.Bundle
+import fr.pe.jenkins.plugins.notification.*
+import fr.pe.jenkins.plugins.notification.simple.*
+import fr.pe.jenkins.plugins.notification.library.*
+import fr.pe.jenkins.plugins.util.*
+
+Bundle releaseBundle
+def environnement = [:]
+String envName
+String projectName
+String matrixToDeliver
+Notification deploiementNotif
+Notification livraisonNotif
+Notification demanderLivraisonNotif
+
+
+pipeline {
+    agent none
+
+    tools {
+        maven "MAVEN_3_3_9_HOME"
+        jdk "JAVA_1_8_0_66_HOME"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        provenUser = "${env['PROVEN_user']}"
+        provenPassword = "${env['PROVEN_password']}"
+        PROVEN_CREDENTIAL_ID = "proven_user"
+        pomParent = "pom.xml"
+    }
+
+    parameters {
+        string(name: 'version', defaultValue: '', description: 'Version  livrer')
+        choice(name: 'RepriseStage', choices: 'VA-CPP\nPROD', description: 'Permet de reprendre à une étape : valeurs possibles VA-CPP ou PROD')
+    }
+
+    stages {
+        stage('Préparation') {
+            agent {
+                label JenkinsNodes.MAVEN.label
+            }
+            
+            steps {
+                script {
+                    //creation de l'object Bundle à partir du pom
+                    def pomDefinition = readMavenPom file: env.pomParent
+
+                    def groupId = pomDefinition.groupId
+                    def artifactId = pomDefinition.artifactId
+                    
+                    releaseBundle = new Bundle(groupId,artifactId, env.version,'','war')
+                    currentBuild.displayName = "${releaseBundle.releaseVersion} - VA-CPP --> PROD"
+                    currentBuild.description = "${releaseBundle.releaseGAV}"
+                
+                   //Récupération des sources
+                   checkout scm
+
+                    String confUrl='http://git-scm.pole-emploi.intra/px014-scanr/px014-scanr-ic/raw/master/configuration.json'
+
+                    //lecture des paramètres de deploiement
+                    try {
+			            String configurationText = new URL(confUrl).getText(requestProperties: [Accept: 'application/json', 'PRIVATE-TOKEN': env.gitlabPrivateToken])
+			            configuration = json.parseFromText(configurationText)
+		            } catch (exception) {
+			            echo "Une erreur est survenue a la lecture du fichier " + confUrl.substring(confUrl.lastIndexOf('/') + 1) + " !" + exception.getMessage()
+			            throw exception 
+		            }
+                
+                    projectName = configuration.projet
+                    contacts = configuration.contacts
+                    deliverySubmitters = env.Livreurs_DROSD_CLE+ ',' + configuration.sumitters.LIVRAISON
+                    deliveryProject = configuration.deliveryProject + ',' + deliverySubmitters
+                    
+                    if (params.RepriseStage == 'PROD') {
+                        currentBuild.displayName = "${releaseBundle.releaseVersion} - PROD"
+                    }
+                }
+            }
+        }    
+
+/********************** VA-CPP ********************/
+        
+        stage('Confirmation de livraison en VA-CPP') {
+            when { 
+                anyOf {
+                    environment name: 'RepriseStage', value: 'VA-CPP'                
+                }
+             }
+            steps {
+                 script {
+                     envName = "VA-CPP"
+                     timeout(time:10, unit:'DAYS') {
+                         env.CHECK_DEPLOY = input message: "Voulez-vous livrer la version ${releaseBundle.releaseVersion} du bundle ${releaseBundle.artifactId}  en VA ? ", ok: 'Exécuter !', submitter: deliveryProject , parameters: [[$class: 'hudson.model.BooleanParameterDefinition', name : 'avec déploiement', defaultValue: false, description : 'si non coché, déploiement par TWS']]
+                     }
+                 }
+             }
+        }
+
+        stage('Livraison en VA-CPP') {
+            agent {
+                label JenkinsNodes.MAVEN.label
+            }
+            when { 
+                anyOf {
+                    environment name: 'RepriseStage', value: 'VA-CPP'
+                 }
+             }
+            
+            steps {
+                script {
+                     recipientsCc = "${contacts.ST}, ${contacts.EQUIPE}"
+                     livraisonNotif = Livraison.to(recipientsCc,"").by([NotificationProtocol.MAIL, NotificationProtocol.SLACK])
+                     livraisonNotif.appendData(NotificationDataKeys.PROJECT_NAME.key, projectName)
+                     livraisonNotif.withSlackOpts("${env.MATTERMOST_DROSD_CLE}", "#jenkins-va")
+                     
+                     String matrixVA = configuration.environnements[envName].matrix
+                     def matricesVA = matrixVA.split(",")
+                            
+                     // On livre les approviosonnements
+                     for(int i=0; i < matricesVA.size(); i++ ) {
+                           def matriceVA = matricesVA[i]
+                           def cadreName = matriceVA.split(":")[2].toUpperCase()
+                           livraisonNotif.appendData(NotificationDataKeys.CADRE.key, cadreName)
+                           livraisonNotif.appendData(NotificationDataKeys.MATRICE.key, matriceVA )
+                           livraisonNotif.appendData(NotificationDataKeys.DESCRIPTION.key, 'Livraison en VA-CPP')
+                     
+                           livrer {
+                                bundles = [releaseBundle]
+                                matrice = matriceVA
+                                notifications = [livraisonNotif]
+                                submitter = deliveryProject
+                           }
+                      }
+                            
+                      if (env.CHECK_DEPLOY == 'true') {
+                        for(int i=0; i < matricesVA.size(); i++ ) {
+                            def matriceVA = matricesVA[i]
+                            def cadreName = matriceVA.split(":")[2].toUpperCase()
+                            recipientsCc = "${contacts.ST}, ${contacts.EQUIPE}"
+                            deploiementNotif = Deploiement.to(recipientsCc,"").by([NotificationProtocol.MAIL, NotificationProtocol.SLACK])
+                            deploiementNotif.appendData(NotificationDataKeys.PROJECT_NAME.key, projectName)
+                            deploiementNotif.appendData(NotificationDataKeys.CADRE.key, cadreName)
+                            deploiementNotif.appendData(NotificationDataKeys.DESCRIPTION.key, 'Déploiement en VA-CPP')
+                            deploiementNotif.appendData(NotificationDataKeys.MATRICE.key, matriceVA)
+                            deploiementNotif.withSlackOpts("${env.MATTERMOST_DROSD_CLE}", "#jenkins-va")
+                            deployer {
+                                  bundles = [releaseBundle]
+                                  matrice = "${matriceVA}"
+                                  notifications = [deploiementNotif]
+                            }
+                            redemarrer {
+                                bundles = [releaseBundle.releaseGAV]
+                                matrice =  "${matriceVA}"
+                            }
+                        }    
+                      } else {
+                          echo "Le déploiement sera effectué par TWS"
+                      }
+                    }
+                }
+            }
+        
+        /********************** PROD ********************/
+
+        stage('Confirmation de promotion en PROD') {
+            steps {
+                script {
+                   timeout(time:30, unit:'DAYS') {
+                      userId = input message: "Voulez-vous promouvoir la version ${releaseBundle.releaseVersion} du bundle ${releaseBundle.artifactId}  en PROD ? ",submitterParameter: 'submitter', submitter: deliverySubmitters
+                    }
+                }
+             }
+        }
+
+        stage('Promotion en PROD') {
+            agent {
+                label JenkinsNodes.MAVEN.label
+            }
+            steps {
+                script {
+                    envName = "PROD"
+                    def matricesProd =  configuration.environnements[envName].matrix.split(",")
+                    recipientsCc = "${contacts.ST}, ${contacts.EQUIPE}, ${contacts.OPS}"
+                    Notification promotionNotif = Promotion.to(contacts.LIV, recipientsCc).by([NotificationProtocol.MAIL, NotificationProtocol.SLACK])
+                    promotionNotif.appendData(NotificationDataKeys.PROJECT_NAME.key, projectName)
+                    promotionNotif.appendData(NotificationDataKeys.PROMOTION_LEVEL.key, 'Prod')
+                    promotionNotif.appendData(NotificationDataKeys.DESCRIPTION.key, 'Promotion en PROD')
+                    promotionNotif.withSlackOpts("${env.MATTERMOST_DROSD_CLE}", "#jenkins-prod")
+                    def matricesToLivrer = []
+                    for(int i=0; i < matricesProd.size(); i++ ) {
+                      matricesToLivrer.add(matricesProd[i])    
+                    }
+                
+                    promouvoir {
+                        bundles = [releaseBundle]
+                        repositorySource = RepositoryEnum.ALPHA
+                        repositoryDest = RepositoryEnum.PROD
+                        notifications = [promotionNotif]
+                        submitter = deliverySubmitters
+                        matrices = matricesToLivrer
+                    }
+                }
+            }
+        }    
+
+        stage('Livraison en PROD') {
+            agent {
+                label JenkinsNodes.MAVEN.label
+            } 
+            steps {
+                script {
+
+                    timeout(time:15, unit:'DAYS') {
+                        def result = input message: "Production - Renseigner votre login Neptune", ok: 'Ok !', parameters: [[$class: 'TextParameterDefinition', defaultValue:"${userId}", description: '', name: 'Proven_User'], [$class: 'PasswordParameterDefinition', description: 'Mot de passe Neptune', name: 'Proven_Password']]
+                        def matricesProd =  configuration.environnements[envName].matrix.split(",")
+                        for(int i=0; i < matricesProd.size(); i++ ) {
+                            def demandeLivrer = input message: "Voulez-vous approvisionner la version ${releaseBundle.releaseVersion} de l'artifact ${releaseBundle.artifactId} à partir de la matrice ${matricesProd[i]}", ok: 'Exécuter !', submitter: deliverySubmitters, parameters: [[$class: 'hudson.model.ChoiceParameterDefinition', choices: 'Oui\nNon', description: "si non, on passe à la matrice suivante", name: '']]
+                            if (demandeLivrer == "Oui") {
+                                recipientsCc = "${contacts.ST}, ${contacts.EQUIPE}, ${contacts.OPS}"
+                                def cadreName = matricesProd[i].split(":")[2].toUpperCase()
+                                livraisonNotif = Livraison.to(contacts.LIV, recipientsCc).by([NotificationProtocol.MAIL, NotificationProtocol.SLACK])
+                                livraisonNotif.appendData(NotificationDataKeys.DESCRIPTION.key, 'Livraison en PROD')
+                                livraisonNotif.appendData(NotificationDataKeys.PROJECT_NAME.key, projectName)
+                                livraisonNotif.appendData(NotificationDataKeys.CADRE.key, cadreName)
+                                livraisonNotif.appendData(NotificationDataKeys.MATRICE.key, "${matricesProd[i]}")
+                                livraisonNotif.withSlackOpts("${env.MATTERMOST_DROSD_CLE}", "#jenkins-prod")
+                                withEnv(["provenUser="+result['Proven_User'],"provenPassword=" +result['Proven_Password']]) {
+                                     livrer {
+                                        bundles = [releaseBundle]
+                                        matrice =  "${matricesProd[i]}"
+                                        notifications = [livraisonNotif]
+                                      }
+                                }
+                            } else {
+                                    echo "L'approvisionnement de la version ${releaseBundle.releaseVersion} de l'artifact ${releaseBundle.artifactId} à partir de la matrice ${matricesProd[i]} a été ignoré"
+                            }
+                               
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

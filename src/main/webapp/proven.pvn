@@ -1,0 +1,11 @@
+<proven>
+   <releaseNote>
+       <version>
+       </version>
+   </releaseNote>
+   <valorisableExtensions>
+       <extension>yml</extension>
+       <extension>yaml</extension>
+       <extension>xml</extension>
+   </valorisableExtensions>
+</proven>

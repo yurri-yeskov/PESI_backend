@@ -1,0 +1,333 @@
+swagger: '2.0'
+info:
+  title: Pole Emploi Scan Intelligent
+  version: 0.0.1
+  description: Description du Web-Service exposé par le backend de l'application Scan Intelligent
+  contact:
+    name: Aurelien PRALONG
+    email: aurelien.pralong@imagidoc.com
+tags:
+  - name: Informations V1
+    description: Donne des informations sur l'application
+  - name: Client logging V1
+    description: Permet aux scanners d'envoyer des messages
+  - name: Scanner V1
+    description: Fonctionnalités supplémentaire pour les scanners
+  - name: Xerox HTTP Upload V1
+    description: Implémentation du système d'envoi HTTP compatible avec les scanners XEROX, adapté aux contraintes Pôle Emploi
+  - name: Conseiller V1
+    description: Mise à disposition d'informations sur les conseillers
+  - name: Region V1
+    description: Mise à disposition d'informations sur les conseillers
+paths:
+  /api/v1/informations:
+    get:
+      operationId: getVersion
+      tags:
+      - Informations V1
+      summary: Donne les informations de l'application
+      responses:
+        200:
+          description: Retourne les informations courantes de l'application
+          schema:
+            $ref: '#/definitions/ApplicationInformations'
+  /api/v1/logs:
+    post:
+      operationId: addDeviceLog
+      tags:
+      - Client logging V1
+      summary: Ajoute au niveau du serveur un log en provenance d'un scanner
+      parameters:
+      - name: deviceLog
+        in: body
+        schema:
+          $ref: '#/definitions/ClientLog'
+      responses:
+        204:
+          description: Ne retourne pas de résultat
+  /api/v1/scan/search:
+    get:
+      operationId: searchScan
+      tags:
+      - Scanner V1
+      summary: Recherche les informations d'une numérisation
+      parameters:
+      - name: jobId
+        in: query
+        type: integer
+        required: true
+        description: Identifiant du job de numérisation
+      - name: serial
+        in: query
+        type: string
+        required: true
+        description: Numéro de série du scanner, e.g. 3350230233
+      - name: creationDate
+        in: query
+        type: string
+        format: date-time
+        required: true
+        description: Date de création de la numérisation
+      responses:
+        200:
+          description: La numérisation a été trouvée. Ses informations sont retournées dans la réponse
+          schema:
+            $ref: "#/definitions/ScanInfo"
+        404:
+          description: Aucune correspondance n'a été trouvée
+  /api/v1/scan/part:
+    get:
+      operationId: getPage
+      tags:
+      - Scanner V1
+      summary: Retourne l'image qui correspond à la numérisation donnée
+      produces: 
+      - image/jpeg
+      parameters:
+      - name: fileName
+        in: query
+        type: string
+        required: true
+        description: Nom de la numérisation
+      - name: page
+        in: query
+        type: integer
+        required: true
+        description: Numéro de la page à récupérer (première page = 1)
+      responses:
+        200:
+          description: L'image a été générée
+  /api/v1/scan/file/{fileName}:
+    get:
+      operationId: getFile
+      tags:
+      - Scanner V1
+      summary: Retourne le contenu d'un fichier numérisé
+      produces:
+      - application/pdf
+      parameters:
+      - name: fileName
+        in: path
+        type: string
+        required: true
+        description: Nom du fichier numérisé
+      responses:
+        200:
+          description: Le fichier numérisé a été transmis
+    delete:
+      operationId: deleteFile
+      tags:
+      - Scanner V1
+      summary: Supprime un fichier numérisé
+      parameters:
+      - name: fileName
+        in: path
+        type: string
+        required: true
+        description: Nom du fichier numérisé
+      responses:
+        204:
+          description: Ne retourne pas de résultat
+  /api/v1/scan/merge:
+    post:
+      operationId: mergeScans
+      tags:
+      - Scanner V1
+      summary: Assemble plusieurs numérisations. Supprime également les fichiers originaux
+      parameters:
+      - name: fileName
+        in: query
+        type: array
+        items:
+          type: string
+        required: true
+        description: Fichiers à assembler
+      responses:
+        200:
+          description: L'assemblage est terminé. Ses informations sont retournées dans la réponse
+          schema:
+            $ref: "#/definitions/ScanInfo"
+
+  /api/v1/xerox/upload:
+    post:
+      operationId: handleScannerRequest
+      tags:
+      - Xerox HTTP Upload V1
+      summary: Traite une requête de scan d'une imprimante Xerox
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - name: theOperation
+        in: formData
+        type: string
+        required: false
+        description: Nom de l'opération. Valeurs possibles DeleteFile, MakeDir, RemoveDir, DeleteDirContents, GetFile, PutFile, ListDir
+      - name: destDir
+        in: formData
+        type: string
+        required: false
+        description: Dossier de destination
+      - name: destName
+        in: formData
+        type: string
+        required: false
+        description: Nom de destination
+      - name: delDir
+        in: formData
+        type: string
+        required: false
+        description: 1 si DeleteDirContents devrait effacer le contenu du dossier
+      responses:
+        200:
+          description: L'opération a réussi. Peut retourner un résultat selon l'opération
+  
+  /api/v1/conseiller/{id}:
+    get:
+      operationId: getStructure
+      tags:
+      - Conseiller V1
+      summary: Retourne la structure du conseiller
+      parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        minLength: 8
+        maxLength: 8
+        pattern: '^[a-zA-Z]{4}[0-9]{4}$'
+        description: Identifiant de l'utilisateur (4 lettres, 4 chiffres)
+      responses:
+        200:
+          description: Contient la structure du conseiller
+          schema:
+            $ref: "#/definitions/Structure"
+  /api/v1/conseiller/refreshCache:
+    post:
+      operationId: refreshCacheConseiller
+      tags:
+      - Conseiller V1
+      summary: Force la mise à jour du cache utilisateur
+      responses:
+        200:
+          description: Opération réussie, nombre de conseillers chargés retourné
+          schema:
+            type: integer
+  
+  /api/v1/region:
+    get:
+      operationId: getAllRegions
+      tags:
+      - Region V1
+      summary: Retourne toutes les régions disponibles
+      responses:
+        200:
+          description: Contient toutes les régions disponibles
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Structure"
+  /api/v1/region/{id}:
+    get:
+      operationId: getRegion
+      tags:
+      - Region V1
+      summary: Retourne les détails d'une région
+      parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        minLength: 3
+        maxLength: 3
+        pattern: '^[0-9]{3}$'
+        description: Identifiant de la région (3 chiffres)
+      responses:
+        200:
+          description: Contient la structure d'une région
+          schema:
+            $ref: "#/definitions/Region"
+  /api/v1/region/refreshCache:
+    post:
+      operationId: refreshCacheRegion
+      tags:
+      - Region V1
+      summary: Force la mise à jour du cache des régions
+      responses:
+        200:
+          description: Opération réussie, nombre de régions chargées retourné
+          schema:
+            type: integer
+            
+definitions:
+  ApplicationInformations:
+    type: object
+    required:
+      - name
+      - version
+    properties:
+      name:
+        type: string
+        description: Nom de l'application
+      version:
+        type: string
+        description: Version de l'application
+  ClientLog:
+    type: object
+    required:
+      - comment
+    properties:
+      deviceName:
+        type: string
+        description: Nom du matériel, e.g. I22322
+      serial:
+        type: string
+        description: Numéro de série du matériel, e.g. 3350230233
+      systemSoftware:
+        type: string
+        description: Version logicielle du matériel
+      mac:
+        type: string
+        description: Adresse mac du matériel
+      comment:
+        type: string
+        description: Message de log
+
+  ScanInfo:
+    type: object
+    required: 
+    - fileName
+    - pageCount
+    properties:
+      fileName:
+        type: string
+        description: Nom du fichier numérisé
+      pageCount:
+        type: integer
+        description: Nombre de pages du document
+      size:
+        type: integer
+        description: Taille du document (octet)
+  
+  Structure:
+    type: object
+    required:
+    - code
+    properties:
+      code:
+        type: string
+        description: Code de la structure
+      region:
+        $ref: "#/definitions/Region"
+  
+  Region:
+    type: object
+    required:
+    - codeAssedic
+    - libelleAssedic
+    properties:
+      codeAssedic:
+        type: string
+        description: Code ASSEDIC de la région
+      libelleAssedic:
+        type: string
+        description: Libellé ASSEDIC de la région

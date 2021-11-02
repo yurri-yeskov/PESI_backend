@@ -1,0 +1,753 @@
+{
+	"info": {
+		"_postman_id": "b77f0e7d-2ce4-4e16-a757-d499977e7fa9",
+		"name": "ScenarioPE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "DE",
+			"item": [
+				{
+					"name": "Authentification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "aea8cb71-bea0-4afd-a0ea-975360e474c3",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let jsonData = JSON.parse(responseBody);",
+									"pm.globals.set(\"token\", jsonData.access_token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{AUTH_DE}}/connexion/oauth2/access_token?client_id={{ID_DE}}&client_secret={{SECRET_DE}}&grant_type=client_credentials&realm=individu&scope=nomenclature%20individuScanr%20docScanr%20docScanrW",
+							"host": [
+								"{{AUTH_DE}}"
+							],
+							"path": [
+								"connexion",
+								"oauth2",
+								"access_token"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "{{ID_DE}}"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{SECRET_DE}}"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials"
+								},
+								{
+									"key": "realm",
+									"value": "individu"
+								},
+								{
+									"key": "scope",
+									"value": "nomenclature%20individuScanr%20docScanr%20docScanrW"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationDE",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "2e5118e5-9632-4076-b550-984a44c590d4",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-pe/rs/v1/identifier-individu?identifiant=0770086A&codePostal=62600&dateNaissance=03%2F06%2F1979",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-pe",
+								"rs",
+								"v1",
+								"identifier-individu"
+							],
+							"query": [
+								{
+									"key": "identifiant",
+									"value": "0770086A"
+								},
+								{
+									"key": "codePostal",
+									"value": "62600"
+								},
+								{
+									"key": "dateNaissance",
+									"value": "03%2F06%2F1979"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationTypesDocuments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "23ff4362-72a8-44d6-bfa9-e003f33862ea",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/candidat/nomenclature/document/v1/documents-numerisables?codeOrigineAcquisition=DE&codeCanalReception=scan",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"candidat",
+								"nomenclature",
+								"document",
+								"v1",
+								"documents-numerisables"
+							],
+							"query": [
+								{
+									"key": "codeOrigineAcquisition",
+									"value": "DE"
+								},
+								{
+									"key": "codeCanalReception",
+									"value": "scan"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Conseiller",
+			"item": [
+				{
+					"name": "Authentification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1166de3f-91cb-4e25-a2c9-d0adbdaa8f7b",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let jsonData = JSON.parse(responseBody);",
+									"pm.globals.set(\"token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"disabled": false
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{AUTH_CONSEILLER}}/connexion/oauth2/access_token?client_id={{ID_CONSEILLER}}&client_secret={{SECRET_CONSEILLER}}&grant_type=password&realm=agent&scope=nomenclature%20docScanr%20docScanrW%20rechercheIndividu%20profile%20documentNumeriseW&username=TNAN1710&password=recette1",
+							"host": [
+								"{{AUTH_CONSEILLER}}"
+							],
+							"path": [
+								"connexion",
+								"oauth2",
+								"access_token"
+							],
+							"query": [
+								{
+									"key": "client_id",
+									"value": "{{ID_CONSEILLER}}"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{SECRET_CONSEILLER}}"
+								},
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "realm",
+									"value": "agent"
+								},
+								{
+									"key": "scope",
+									"value": "nomenclature%20docScanr%20docScanrW%20rechercheIndividu%20profile%20documentNumeriseW"
+								},
+								{
+									"key": "username",
+									"value": "TNAN1710"
+								},
+								{
+									"key": "password",
+									"value": "recette1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "InfosDE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4e897a88-19c7-4191-91d9-14aa4c05508e",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/exp-rechercheindividu/v2/individus?codetp=026&identifiantrsin=0770086A",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"exp-rechercheindividu",
+								"v2",
+								"individus"
+							],
+							"query": [
+								{
+									"key": "codetp",
+									"value": "026"
+								},
+								{
+									"key": "identifiantrsin",
+									"value": "0770086A"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationCodeSafir",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/conseiller/IACI4340",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"conseiller",
+								"IACI4340"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationRegions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/region/",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"region",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationCodePE",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/nomenclature/unite/v1/unites/64070/SAF",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"nomenclature",
+								"unite",
+								"v1",
+								"unites",
+								"64070",
+								"SAF"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationLibelleUnite",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/nomenclature/unite/v1/regionsASSEDIC?",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"nomenclature",
+								"unite",
+								"v1",
+								"regionsASSEDIC"
+							],
+							"query": [
+								{
+									"key": "codeRAS",
+									"value": "001",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationTypesDocuments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "93896006-4ee2-4fb3-8713-53d8049779a8",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/conseiller/nomenclature/document/v1/documents-numerisables?codeOrigineAcquisition=C&codeCanalReception=scan",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"conseiller",
+								"nomenclature",
+								"document",
+								"v1",
+								"documents-numerisables"
+							],
+							"query": [
+								{
+									"key": "codeOrigineAcquisition",
+									"value": "C"
+								},
+								{
+									"key": "codeCanalReception",
+									"value": "scan"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Scanner",
+			"item": [
+				{
+					"name": "TransfertFichier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "14737258-2c97-448b-a604-74a29aabdffe",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Retour OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.text()).to.not.include(\"XRXERROR\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "destDir",
+									"value": ".",
+									"type": "text"
+								},
+								{
+									"key": "destName",
+									"value": "855_3350230237_20180205-161719.pdf",
+									"type": "text"
+								},
+								{
+									"key": "theOperation",
+									"value": "PutFile",
+									"type": "text"
+								},
+								{
+									"key": "sendfile",
+									"type": "file",
+									"src": null
+								}
+							]
+						},
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/xerox/upload",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"xerox",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RechercheFichier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "894aa499-8a00-406e-a12e-11908700b4de",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Retour OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/scan/search?jobId=855&serial=3350230237&creationDate=2018-02-05T15:17:19.000Z",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"scan",
+								"search"
+							],
+							"query": [
+								{
+									"key": "jobId",
+									"value": "855"
+								},
+								{
+									"key": "serial",
+									"value": "3350230237"
+								},
+								{
+									"key": "creationDate",
+									"value": "2018-02-05T15:17:19.000Z"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationImage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4259160d-1d2e-4db9-bc2b-69245de9d170",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Retour OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/scan/part?fileName=855_3350230237_20180205-161719.pdf&page=1",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"scan",
+								"part"
+							],
+							"query": [
+								{
+									"key": "fileName",
+									"value": "855_3350230237_20180205-161719.pdf"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RecuperationFichier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d6064309-6f9d-4728-8ac5-ea751e27decd",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Retour OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/scan/file/855_3350230237_20180205-161719.pdf",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"scan",
+								"file",
+								"855_3350230237_20180205-161719.pdf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SuppressionFichier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "2fd98de4-098d-4bad-9b63-46cd8a907433",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Retour OK\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{VIP}}/scanr-api/api/v1/scan/file/855_3350230237_20180205-161719.pdf",
+							"host": [
+								"{{VIP}}"
+							],
+							"path": [
+								"scanr-api",
+								"api",
+								"v1",
+								"scan",
+								"file",
+								"855_3350230237_20180205-161719.pdf"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "e1ce6830-3233-4760-9bcd-89d04b7d5847",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "aaec45e4-17fb-4c2b-8fe1-e7bb37f0b2ec",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "5ea3911b-168a-47f0-b217-631af0f53c47",
+			"key": "VIP",
+			"value": "https://px014-vipa-a0ssge0.sii24.pole-emploi.intra",
+			"type": "string"
+		},
+		{
+			"id": "a279c76b-955e-4930-927e-43245f8ab61b",
+			"key": "AUTH_DE",
+			"value": "https://so017-vipa-01bsbk1.sii24.pole-emploi.intra",
+			"type": "string"
+		},
+		{
+			"id": "a640358f-ea1e-4206-aa31-063e2f5fbcd1",
+			"key": "AUTH_CONSEILLER",
+			"value": "https://authentification-agent-tis.pe.intra",
+			"type": "string"
+		},
+		{
+			"id": "df7c7fbc-c7d7-4d97-8bf0-c18310268b99",
+			"key": "ID_DE",
+			"value": "USG_PX014-scanr_19D406EAF49D5527BF901BAD23EEF806AD741F3E6ABC82A708CCEDBDBE77B4E8",
+			"type": "string"
+		},
+		{
+			"id": "b405df77-52c0-42e5-a286-8c49bee13e22",
+			"key": "ID_CONSEILLER",
+			"value": "AGT_PX014-scanr_4598E0156CBDA405A3BCD226ABD58C1C25CDC57837E23A49BE621FC90DADC65C",
+			"type": "string"
+		},
+		{
+			"id": "489a36f8-c9fe-4d05-b7e4-d10fea7607b8",
+			"key": "SECRET_DE",
+			"value": "995622BB04AB85D52167BF86888982AAA900148B95D31550BEE7A87725A268C6",
+			"type": "string"
+		},
+		{
+			"id": "d56185ea-9075-4db9-abe4-d514af0206d8",
+			"key": "SECRET_CONSEILLER",
+			"value": "9854B3313441F1769131F5C9B4A59AAFE71D51C5DDE6C7F699AFB072C7FF4C6B",
+			"type": "string"
+		}
+	]
+}

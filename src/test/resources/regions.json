@@ -1,0 +1,182 @@
+[
+    {
+        "codeAssedic": "001",
+        "libelleAssedic": "AQUITAINE TEST",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "012",
+        "libelleAssedic": "LIMOUSIN",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "013",
+        "libelleAssedic": "PAYS DE LOIRE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "016",
+        "libelleAssedic": "SUD EST FRANCILIEN",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "017",
+        "libelleAssedic": "ALSACE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "020",
+        "libelleAssedic": "FRANCHE COMTE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "024",
+        "libelleAssedic": "ALPES",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "025",
+        "libelleAssedic": "PICARDIE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "026",
+        "libelleAssedic": "PAS DE CALAIS",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "027",
+        "libelleAssedic": "BRETAGNE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "031",
+        "libelleAssedic": "VALLEES RHONE LOIRE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "032",
+        "libelleAssedic": "COTE D'AZUR",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "034",
+        "libelleAssedic": "ALPES PROVENCE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "035",
+        "libelleAssedic": "REGION CENTRE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "039",
+        "libelleAssedic": "POITOU CHARENTES",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "040",
+        "libelleAssedic": "BASSE NORMANDIE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "041",
+        "libelleAssedic": "REGION HAUTE NORMANDIE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "044",
+        "libelleAssedic": "AUVERGNE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "046",
+        "libelleAssedic": "LANGUEDOC ROUSSILLON",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "048",
+        "libelleAssedic": "MIDI PYRENEES",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "049",
+        "libelleAssedic": "PAYS DU NORD",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "050",
+        "libelleAssedic": "BOURGOGNE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "051",
+        "libelleAssedic": "CHAMPAGNE ARDENNE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "055",
+        "libelleAssedic": "POLE EMPLOI SERVICES (RG)",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "056",
+        "libelleAssedic": "PARIS",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "057",
+        "libelleAssedic": "OUEST FRANCILIEN",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "061",
+        "libelleAssedic": "EST FRANCILIEN",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "063",
+        "libelleAssedic": "LORRAINE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "065",
+        "libelleAssedic": "CORSE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "066",
+        "libelleAssedic": "GUADELOUPE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "067",
+        "libelleAssedic": "MARTINIQUE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "068",
+        "libelleAssedic": "LA REUNION",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "069",
+        "libelleAssedic": "GUYANE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "070",
+        "libelleAssedic": "SAINT-PIERRE ET MIQUELON",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "071",
+        "libelleAssedic": "MAYOTTE",
+        "statutAssedic": "N"
+    },
+    {
+        "codeAssedic": "080",
+        "libelleAssedic": "POLE EMPLOI SERVICES (SPECTACLE)",
+        "statutAssedic": "N"
+    }
+]

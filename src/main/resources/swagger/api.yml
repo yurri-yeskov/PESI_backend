@@ -1,0 +1,337 @@
+swagger: '2.0'
+info:
+  title: Pole Emploi Scan Intelligent
+  version: 0.0.1
+  description: Backend web-service description for Scan Intelligent application
+  contact:
+    name: Aurelien PRALONG
+    email: aurelien.pralong@imagidoc.com
+tags:
+  - name: Informations V1
+    description: Gives informations about this application
+  - name: Client logging V1
+    description: Allows devices to log some messages / errors
+  - name: Scanner V1
+    description: Scanner extended functionalities
+  - name: Xerox HTTP Upload V1
+    description: Adds Xerox scanner HTTP upload capacity
+  - name: Conseiller V1
+    description: Provides advisor informations
+  - name: Region V1
+    description: Provides region informations
+paths:
+  /api/v1/informations:
+    get:
+      operationId: getVersion
+      tags:
+      - Informations V1
+      summary: Gives informations about this application
+      responses:
+        200:
+          description: Returns current application informations
+          schema:
+            $ref: '#/definitions/ApplicationInformations'
+  /api/v1/logs:
+    post:
+      operationId: addDeviceLog
+      tags:
+      - Client logging V1
+      summary: Adds a client generated log to the server
+      parameters:
+      - name: deviceLog
+        in: body
+        schema:
+          $ref: '#/definitions/ClientLog'
+      responses:
+        204:
+          description: Does not return a result
+  /api/v1/scan/search:
+    get:
+      operationId: searchScan
+      tags:
+      - Scanner V1
+      summary: Searches informations for given scan
+      parameters:
+      - name: jobId
+        in: query
+        type: integer
+        required: true
+        description: Scan job ID
+      - name: serial
+        in: query
+        type: string
+        required: true
+        description: Scanner serial number, e.g. 3350230233
+      - name: creationDate
+        in: query
+        type: string
+        format: date-time
+        required: true
+        description: Scan creation date
+      responses:
+        200:
+          description: Scan has been found. It informations are returned in the response
+          schema:
+            $ref: "#/definitions/ScanInfo"
+        404:
+          description: No matching scan could be found
+  /api/v1/scan/part:
+    get:
+      operationId: getPage
+      tags:
+      - Scanner V1
+      summary: Returns the image that matches given scan page
+      produces: 
+      - image/jpeg
+      parameters:
+      - name: fileName
+        in: query
+        type: string
+        required: true
+        description: Scan file name
+      - name: page
+        in: query
+        type: integer
+        required: true
+        description: Page to retrieve, 1 based
+      responses:
+        200:
+          description: Image has been retrieved
+        404:
+          description: Scan could not be found
+  /api/v1/scan/file/{fileName}:
+    get:
+      operationId: getFile
+      tags:
+      - Scanner V1
+      summary: Returns scan file
+      produces:
+      - application/pdf
+      parameters:
+      - name: fileName
+        in: path
+        type: string
+        required: true
+        description: Scan file to retrieve
+      responses:
+        200:
+          description: Scan has been retrieved
+        404:
+          description: Scan could not be found
+    delete:
+      operationId: deleteFile
+      tags:
+      - Scanner V1
+      summary: Deletes scan file
+      parameters:
+      - name: fileName
+        in: path
+        type: string
+        required: true
+        description: Scan file to delete
+      responses:
+        204:
+          description: Does not return a result
+  /api/v1/scan/merge:
+    post:
+      operationId: mergeScans
+      tags:
+      - Scanner V1
+      summary: Merges scans. This operation deletes original files on success.
+      parameters:
+      - name: fileName
+        in: query
+        type: array
+        items:
+          type: string
+        required: true
+        description: Scan files to merge
+      responses:
+        200:
+          description: Merge has been successful. It details are returned in the body
+          schema:
+            $ref: "#/definitions/ScanInfo"
+
+  /api/v1/xerox/upload:
+    post:
+      operationId: handleScannerRequest
+      tags:
+      - Xerox HTTP Upload V1
+      summary: Handles a Xerox scanner request
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - name: theOperation
+        in: formData
+        type: string
+        required: false
+        description: Operation name, one of DeleteFile, MakeDir, RemoveDir, DeleteDirContents, GetFile, PutFile, ListDir
+      - name: destDir
+        in: formData
+        type: string
+        required: false
+        description: Target folder
+      - name: destName
+        in: formData
+        type: string
+        required: false
+        description: Target name
+      - name: delDir
+        in: formData
+        type: string
+        required: false
+        description: 1 if DeleteDirContents should delete directory content
+      responses:
+        200:
+          description: Operation has succeeded. May return a content according to operation
+    
+  /api/v1/conseiller/{id}:
+    get:
+      operationId: getStructure
+      tags:
+      - Conseiller V1
+      summary: Returns advisor's organization
+      parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        minLength: 8
+        maxLength: 8
+        pattern: '^[a-zA-Z]{4}[0-9]{4}$'
+        description: User ID (4 characters, 4 digits)
+      responses:
+        200:
+          description: Contains advisor's organization
+          schema:
+            $ref: "#/definitions/Structure"
+  /api/v1/conseiller/refreshCache:
+    post:
+      operationId: refreshCacheConseiller
+      tags:
+      - Conseiller V1
+      summary: Forces user cache refresh
+      responses:
+        200:
+          description: Operation is successful, loaded advisor count is returned
+          schema:
+            type: integer
+  
+  /api/v1/region:
+    get:
+      operationId: getAllRegions
+      tags:
+      - Region V1
+      summary: Returns all available regions
+      responses:
+        200:
+          description: Contains all available regions
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Structure"
+  /api/v1/region/{id}:
+    get:
+      operationId: getRegion
+      tags:
+      - Region V1
+      summary: Returns details for a specific region
+      parameters:
+      - name: id
+        in: path
+        type: string
+        required: true
+        minLength: 3
+        maxLength: 3
+        pattern: '^[0-9]{3}$'
+        description: Region ID (3 digits)
+      responses:
+        200:
+          description: Contains details for a specific region
+          schema:
+            $ref: "#/definitions/Region"
+  /api/v1/region/refreshCache:
+    post:
+      operationId: refreshCacheRegion
+      tags:
+      - Region V1
+      summary: Forces region cache refresh
+      responses:
+        200:
+          description: Operation successful, loaded region count is returned
+          schema:
+            type: integer
+
+definitions:
+  ApplicationInformations:
+    type: object
+    required:
+      - name
+      - version
+    properties:
+      name:
+        type: string
+        description: Application name
+      version:
+        type: string
+        description: Application version
+  ClientLog:
+    type: object
+    required:
+      - comment
+    properties:
+      deviceName:
+        type: string
+        description: Device name, e.g. I22322
+      serial:
+        type: string
+        description: Device serial number, e.g. 3350230233
+      systemSoftware:
+        type: string
+        description: Device software version
+      mac:
+        type: string
+        description: Device mac address
+      comment:
+        type: string
+        description: Log message
+
+  ScanInfo:
+    type: object
+    required: 
+    - fileName
+    - pageCount
+    properties:
+      fileName:
+        type: string
+        description: Scan file name
+      pageCount:
+        type: integer
+        description: Scan page count
+      size:
+        type: integer
+        description: Scan size (octet)
+  
+  Structure:
+    type: object
+    required:
+    - code
+    properties:
+      code:
+        type: string
+        description: Organization code
+      region:
+        $ref: "#/definitions/Region"
+  
+  Region:
+    type: object
+    required:
+    - codeAssedic
+    - libelleAssedic
+    properties:
+      codeAssedic:
+        type: string
+        description: Region ASSEDIC code
+      libelleAssedic:
+        type: string
+        description: Region ASSEDIC label

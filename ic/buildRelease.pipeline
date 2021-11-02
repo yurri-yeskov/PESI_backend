@@ -1,0 +1,139 @@
+#!/usr/bin/groovy
+@Library(['utility-dsl@v2.3','pipeline-shared-lib@2.2.3'])_
+
+import fr.pe.jenkins.plugins.bundle.BundleFactory
+import fr.pe.jenkins.plugins.bundle.Bundle
+import fr.pe.jenkins.plugins.util.*
+import fr.pe.jenkins.plugins.notification.*
+import fr.pe.jenkins.plugins.notification.library.*
+
+Bundle releaseBundle
+Bundle releaseBundleAvecConsole
+
+
+String projectName
+def configuration = [:]
+
+String pipelineDeLivraison_master = "PX014-ScanR/px014-scanr-back-war-livraison-master"
+String pipelineDeLivraison_correctif_prod = "PX014-ScanR/px014-scanr-back-war-livraison-correctif-prod"
+
+pipeline {
+    agent none
+
+    tools {
+        maven "MAVEN_3_5_0_HOME"
+        jdk "JAVA_1_8_0_66_HOME"
+    }
+
+    options {
+        timeout(time: 1, unit: 'HOURS')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        JAVA_VERSION_HOME = 'JAVA_1_8_0_66_HOME'
+        GROOVY_VERSION_HOME = 'GROOVY_2_4_3_HOME'
+        MAVEN_VERSION_HOME = 'MAVEN_3_5_0_HOME'
+        PROVEN_CREDENTIAL_ID = "proven_user"
+        provenUser = "${env['PROVEN_user']}"
+        provenPassword = "${env['PROVEN_password']}"
+        pomParent = "pom.xml"
+    }
+
+    stages {
+
+        stage('Préparation') {
+            agent {
+                label 'maven'
+            }
+            steps {
+                script {
+
+                    //récupération des sources de cette maniere pour que le push sur la branche fonctionne (sinon on est détaché) et qu'il
+                	//n'y ait pas de probleme avec les jobs de type pipeline multibranch
+                	git credentialsId: 'git_jenkins_ssh', url: scm.getUserRemoteConfigs().get(0).getUrl(), branch: "${BRANCH_NAME}"
+
+                    String confUrl='http://git-scm.pole-emploi.intra/px014-scanr/px014-scanr-ic/raw/master/configuration.json'
+                    
+                	//lecture des paramètres de deploiement
+                    try {
+			            String configurationText = new URL(confUrl).getText(requestProperties: [Accept: 'application/json', 'PRIVATE-TOKEN': env.gitlabPrivateToken])
+			            configuration = json.parseFromText(configurationText)
+		            } catch (exception) {
+			            echo "Une erreur est survenue a la lecture du fichier " + confUrl.substring(confUrl.lastIndexOf('/') + 1) + " !" + exception.getMessage()
+			            throw exception 
+		            }
+                    
+                    projectName = configuration.projet
+                	contacts = configuration.contacts
+                	contacts.ST= env.Emails_DROSD_SDF
+                
+                    //creation de l'object Bundle à partir du pom
+                    def pomDefinition = readMavenPom file: env.pomParent
+                    def releaseQualifier = "${env['RELEASE_QUALIFIER'] ? env['BUILD_NUMBER'] + '-' + env['RELEASE_QUALIFIER'].toLowerCase() : env['BUILD_NUMBER']}"
+                    releaseBundle = BundleFactory.createStandardReleaseBundleFromPom(pomDefinition, releaseQualifier)
+                	currentBuild.displayName = "#${env.BUILD_NUMBER} - ${releaseBundle.releaseVersion}"
+                    currentBuild.description = "${releaseBundle.releaseGAV}"
+                    releaseBundle.changelog = ""
+                }
+            }
+        }
+    
+
+        stage('Release') {
+            agent {
+                label 'maven'
+            }
+            steps {
+                script {
+                    Notification releaseNotif = ConstructionVersion.to(contacts.EQUIPE, contacts.ST)
+                    releaseNotif.appendData(NotificationDataKeys.PROJECT_NAME.key, projectName)
+                    def pom = env.pomParent
+                    
+                    echo "Lancement de construireVersionStable"
+                    construireVersionStable {
+                        bundle = releaseBundle
+                        parentPom = pom
+                        mavenProfiles = "prod"
+                        mavenOptions = ""
+                        notifications = [releaseNotif]
+                    }
+                    
+                    echo "Lancement de creerBundleProven"
+                    creerBundleProven {
+		                bundles = [releaseBundle]
+		                repository = RepositoryEnum.ALPHA
+		                artifactoryServer = 'artifactory-pe'
+		            }
+                }
+                
+                
+            }
+        }
+    
+        stage ('Déclenchement du pipeline de livraison') {
+            agent none
+            
+            steps {
+                script {
+                    if ("${BRANCH_NAME}" == "master") {
+                        println "Déclenchement du pipeline de livraison : $pipelineDeLivraison_master pour la branche ${BRANCH_NAME}"
+                        
+                        build job: "$pipelineDeLivraison_master", propagate : false ,  wait: false , parameters: [
+                            [$class: 'StringParameterValue', name: 'version', value: releaseBundle.releaseVersion],
+                            [$class: 'StringParameterValue', name: 'RepriseStage', value: 'TIC']
+                        ]
+                    } else {
+                        println "Déclenchement du pipeline de livraison : $pipelineDeLivraison_correctif_prod pour la branche ${BRANCH_NAME}"
+                        
+                        build job: "$pipelineDeLivraison_correctif_prod", propagate : false ,  wait: false , parameters: [
+                            [$class: 'StringParameterValue', name: 'version', value: releaseBundle.releaseVersion],
+                            [$class: 'StringParameterValue', name: 'RepriseStage', value: 'VA-CPP']
+                        ]
+                    }
+                }
+            }
+       }
+   }
+}
